@@ -1,6 +1,7 @@
 import numpy as np
 import dsmart_utilities
 import os
+import gdal
 
 def Run_DSMART(region_dir):
 
@@ -19,16 +20,43 @@ def Region_Cutout(region_dir,id):
   if os.path.exists('%s/%s' % (output_dir,var)) == False:
    os.mkdir('%s/%s' % (output_dir,var))
   file_out = '%s/%s/%s_%d.tif' % (output_dir,var,var,id)
+  #Extract the cutout
   os.system("gdalwarp -te %.16f %.16f %.16f %.16f -overwrite %s %s" % (dims['minlon_c'],dims['minlat_c'],dims['maxlon_c'],dims['maxlat_c'],file_in,file_out))
+  #Use the lookup table to assign component ids
+  lookup = np.loadtxt('%s/lookup.txt' % region_dir,delimiter=',')
+  #Read in the raster
+  dataset = gdal.Open(file_out)
+  #Get dimensons
+  nx = dataset.RasterXSize
+  ny = dataset.RasterYSize
+  #Retrieve band
+  band = dataset.GetRasterBand(1)
+  #Convert to numpy array
+  data = band.ReadAsArray(0,0,nx,ny).astype(np.float32)
+  #Map the component ids
+  for id in lookup[:,1]:
+   data[data == id]  = lookup[lookup[:,1] == id,0]
+  #Place the data back in the raster 
+  #file_out = '%s/%s/%s_%d_mapped.tif' % (output_dir,var,var,id)
+  dataset_out = dataset.GetDriver().Create(file_out,nx,ny,1,gdal.GDT_Float32)
+  dataset_out.GetRasterBand(1).WriteArray(data)
+  dataset_out.FlushCache()
+  dataset_out.GetRasterBand(1).SetNoDataValue(dataset.GetRasterBand(1).GetNoDataValue())
+  dataset_out.SetGeoTransform(dataset.GetGeoTransform())
+  dataset_out.SetProjection(dataset.GetProjection())
+  
+  
 
  return
 
 #Iterate through the region with overlapping grids
 res = 0.0002777777777780
-x_overlap = 600
-y_overlap = 600
-nx = 900
-ny = 900
+x_overlap = 1000
+y_overlap = 1000
+nx = 1500
+ny = 1500
+x_overlap = 2*nx/3
+y_overlap = 2*ny/3
 minlat = 38.75
 minlon = -89.0
 n = 3
@@ -54,10 +82,10 @@ for i in xrange(n):
   dims['maxlat'] = minlat + ymax*res
   dims['minlon'] = minlon + xmin*res
   dims['maxlon'] = minlon + xmax*res
-  dims['minlat_c'] = minlat + (ymin+300)*res
-  dims['minlon_c'] = minlon + (xmin+300)*res
-  dims['maxlat_c'] = minlat + (ymin+600)*res
-  dims['maxlon_c'] = minlon + (xmin+600)*res
+  dims['minlat_c'] = minlat + (ymin+ny-y_overlap)*res
+  dims['minlon_c'] = minlon + (xmin+nx-x_overlap)*res
+  dims['maxlat_c'] = minlat + (ymin+y_overlap)*res
+  dims['maxlon_c'] = minlon + (xmin+x_overlap)*res
   dims['res'] = res
   dims['nx'] = nx
   dims['ny'] = ny
