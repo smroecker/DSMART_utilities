@@ -7,7 +7,7 @@ def Run_DSMART(region_dir):
 
  owd = os.getcwd()
  os.chdir(region_dir)
- os.system('python configuration.py')
+ os.system('python2.7 configuration.py')
  os.chdir(owd)
  
  return
@@ -59,10 +59,12 @@ x_overlap = 2*nx/3
 y_overlap = 2*ny/3
 minlat = 38.75
 minlon = -89.0
-n = 3
+n = 1#3
 
 #Prepare directories
-dir = '/home/ice/nchaney/PROJECTS/SYDNEY2014/HOMOGENIZATION/dsmart_example/illinois'
+dir = '/scratch/sciteam/nchaney/data/gSSURGO/illinois'
+home_dir = '/u/sciteam/nchaney/data/gSSURGO/illinois'
+#dir = '/home/ice/nchaney/PROJECTS/SYDNEY2014/HOMOGENIZATION/dsmart_example/illinois'
 output_dir = '%s/output' % dir
 if os.path.exists(output_dir) == False:
  os.mkdir(output_dir)
@@ -93,13 +95,13 @@ for i in xrange(n):
 
   #Prepare the data
   region_dir = '%s/region_%d' % (dir,dims['id'])
-  #dsmart_utilities.prepare_input(dims,region_dir)
+  #dsmart_utilities.prepare_input(dims,region_dir,home_dir)
 
   #Run dsmart (Change to directory first)
-  #Run_DSMART(region_dir)
+  Run_DSMART(region_dir)
 
   #Cut out the region of interst
-  Region_Cutout(region_dir,dims['id'])
+  #Region_Cutout(region_dir,dims['id'])
 
 #Merge each variables files
 vars = ['maxcl1_class',]

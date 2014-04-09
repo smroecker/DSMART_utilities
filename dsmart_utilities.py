@@ -2,7 +2,7 @@ import os
 import numpy as np
 import shapefile
 
-def prepare_input(dims,dir):
+def prepare_input(dims,dir,home_dir):
 
  #Create directories
  if os.path.exists(dir) == False:
@@ -12,7 +12,7 @@ def prepare_input(dims,dir):
  os.mkdir('%s/covariates' % dir)
  os.mkdir('%s/polygons' % dir)
 
- shp_in = '/home/latent2/nchaney/EFFINGHAM/Workspace/MUPOLYGON.shp'
+ shp_in = '%s/MUPOLYGON.shp' % home_dir
  shp_out = '%s/polygons' % dir
  res = dims['res']#1*0.0002777777777780
  nx = dims['nx']#1000
@@ -20,9 +20,9 @@ def prepare_input(dims,dir):
  ncores = 6
  zone='16N'
  res_utm = 30.
-
+ 
  #Prepare dem
- dem_in = '/home/latent2/nchaney/EFFINGHAM/Workspace/NED/*.tif'
+ dem_in = '%s/NED/*.tif' % home_dir
  dem_out = '%s/workspace/dem.tif' % dir
  dem_utm_out = '%s/workspace/dem_utm.tif' % dir
  os.system("gdalwarp -t_srs 'EPSG:4326' -dstnodata -9.99e+08 -ts %d %d -te %.16f %.16f %.16f %.16f --config GDAL_CACHEMAX 3000 -wm 3000 -overwrite -r near -ot Float64 -overwrite %s %s" % (nx,ny,dims['minlon'],dims['minlat'],dims['maxlon'],dims['maxlat'],dem_in,dem_out))
@@ -71,7 +71,7 @@ def prepare_input(dims,dir):
   os.system('gdalinfo -stats %s' % file_out)
 
  #Prepare nlcd
- nlcd_in = '/home/ice/nchaney/NLCD/nlcd2006_landcover_4-20-11_se5.img'
+ nlcd_in = '%s/NLCD/nlcd2006_landcover_4-20-11_se5.img' % home_dir
  nlcd_out = '%s/covariates/nlcd.tif' % dir
  os.system('gdalwarp -dstnodata -99999 -tr %.16f %.16f -t_srs EPSG:4326 -te %.16f %.16f %.16f %.16f -overwrite %s %s' % (res,res,dims['minlon'],dims['minlat'],dims['maxlon'],dims['maxlat'],nlcd_in,nlcd_out))
  os.system('gdalinfo -stats %s' % nlcd_out)
@@ -79,7 +79,7 @@ def prepare_input(dims,dir):
  #Prepare K,U, and Th radiometric
  vars = ['K','U','Th']
  for var in vars:
-  file_in = '/home/latent2/nchaney/EFFINGHAM/Workspace/Radiometric/NArad_%s_geog83.tif' % var
+  file_in = '%s/Radiometric/NArad_%s_geog83.tif' % (home_dir,var)
   file_out = '%s/covariates/rad%s.tif' % (dir,var)
   os.system('gdalwarp -r bilinear -ot Float64 -dstnodata -99999 -tr %.16f %.16f -t_srs EPSG:4326 -te %.16f %.16f %.16f %.16f -overwrite %s %s' % (res,res,dims['minlon'],dims['minlat'],dims['maxlon'],dims['maxlat'],file_in,file_out))
   os.system('gdalinfo -stats %s' % file_out)
@@ -88,7 +88,7 @@ def prepare_input(dims,dir):
  os.system('ogr2ogr -spat %.16f %.16f %.16f %.16f -overwrite -select CELLVALUE,MUKEY %s %s' % (dims['minlon'],dims['minlat'],dims['maxlon'],dims['maxlat'],shp_out,shp_in))
 
  #Rasterize the polygons
- tiff_out = '%s/workspace/mupolygon.tiff % dir'
+ tiff_out = '%s/workspace/mupolygon.tiff' % dir
  os.system('gdal_rasterize -init -9999 -te %f %f %f %f -tr %.16f %.16f -a MUKEY -ot Float32 -a_srs EPSG:4326 -l MUPOLYGON %s %s' % (dims['minlon'],dims['minlat'],dims['maxlon'],dims['maxlat'],res,res,shp_out,tiff_out))
 
  #Create attribute list
